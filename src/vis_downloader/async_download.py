@@ -175,17 +175,12 @@ async def _get_holography_url(
             f"where obs_id='ASKAP-{sbid}' "
             f"AND dataproduct_type='visibility' "
         )
-        if dataproduct_type == "craco":
-            query_str += (
-                " AND (filename LIKE 'cracoData%' OR filename LIKE '%.uvfits.tar')"
-            )
-        elif dataproduct_type == "science":
-            query_str += (
-                " AND (filename LIKE 'scienceData%' OR filename LIKE '%.ms.tar')"
-            )
+        prefixes = {"craco": "cracoData", "science": "scienceData"}
+        if dataproduct_type is not None:
+            query_str += f" AND filename LIKE '{prefixes[dataproduct_type]}%'"
 
         if scan_id is not None:
-            query_str += f" AND (filename LIKE '%{scan_id}.uvfits%')"
+            query_str += f" AND filename LIKE '%{scan_id}%'"
 
         if beam is not None:
             query_str += rf" AND filename LIKE '%beam{beam:01d}%'"
@@ -534,6 +529,9 @@ async def get_cutouts_from_casda(  # noqa: PLR0913
             dataproduct_type=download_options.dataproduct_type,
             scan_id=download_options.scan_id,
         )
+
+        if len(result_table) == 0:
+            logger.warning(f"No files found for {sbid=} with the given filters.")
 
         if download_options.log_only:
             logger.info(result_table)
